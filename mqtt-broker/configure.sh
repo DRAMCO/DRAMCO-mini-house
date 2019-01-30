@@ -71,7 +71,7 @@ read token
 touch duckdns.sh
 echo -e "echo url=\"https://www.duckdns.org/update?domains=${name}&token=${token}&ip=\" | curl -k -o ~/duckdns/duck.log -K -" >> duckdns.sh
 chmod 700 duckdns.sh
-echo "*/5 * * * * ~/duckdns/duck.sh >/dev/null 2>&1" >> /etc/crontab
+echo "*/5 * * * * ~/duckdns/duckdns.sh >/dev/null 2>&1" >> /etc/crontab
 
 
 echo "Installing firewall"
