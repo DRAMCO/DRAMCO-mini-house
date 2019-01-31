@@ -59,6 +59,9 @@
 #include "mDNSResolver.h"
 using namespace mDNSResolver;
 
+#define SDA_PIN D6
+#define SCL_PIN D5
+
 #define COLOR_TRESHOLD 0x40
 
 // Networking
@@ -188,7 +191,8 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   set_received = true;
 }
 
-/* Main setup
+/* Main setup:
+ *   Initialize sensor/actuator, networking and mqtt
  */
 void setup() {
   // Init serial
@@ -197,7 +201,7 @@ void setup() {
 
   // I2C bus clear (advisable)
   Serial.print("Clearing I2C bus: ");
-  Serial.println(I2Cbus_statusstr(I2Cbus_clear(SDA,SCL)));
+  Serial.println(I2Cbus_statusstr(I2Cbus_clear(SDA_PIN,SCL_PIN)));
 
 #if (DEVICE_TYPE == TYPE_COLOR_SENSOR)
   // Init RGB Color Sensor
@@ -216,7 +220,7 @@ void setup() {
 #if (DEVICE_TYPE == TYPE_CO2_SENSOR)
   // Init CO2 Sensor
   Serial.println("Init CO2 Sensor... ");
-  if(co2Sensor.begin()){
+  if(co2Sensor.begin(SDA_PIN, SCL_PIN)){
     Serial.println("   OK");
   }
   else{
@@ -293,6 +297,13 @@ void setup() {
 }
 
 /* Main loop
+ *   1. keep communictation alive
+ *       if the device is listening to certain topcis, incoming messages will
+ *       generate a callback
+ *   2. do one or more of these things (based on the specified device type):
+ *       - handle mqtt callbacks
+ *       - handle sensor/actuator-specific events
+ *       - sense periodically
  */
 void loop() {
   // keep the communictation going
@@ -303,6 +314,7 @@ void loop() {
   resolver.loop();
 
 #if (DEVICE_TYPE == TYPE_BUTTON)
+  // handle button press event
   if(btn_pressed){
     btn_pressed = false;
     sprintf_P(message_status, "toggled");
@@ -312,6 +324,7 @@ void loop() {
 #endif
 
 #if (DEVICE_TYPE == TYPE_CURTAINS)
+  // handle curtain motor event
   if(event){
     event = false;
     switch(curtains.getStatus()){
@@ -324,7 +337,7 @@ void loop() {
   }
 #endif
 
-  // handle set message
+  // handle mqtt set message
   if(set_received){
     // reset flag
     set_received = false;
@@ -403,10 +416,10 @@ void loop() {
     client.publish(topic_status, message_status, true);
   }
 
-#if PERIODIC_UPDATES
+#ifdef PERIODIC_UPDATES
   // perform measurement and publish status
   unsigned long currentTime = millis();
-    if(currentTime - lastMeasurement >= MEASUREMENT_PERIOD){
+  if(currentTime - lastMeasurement >= MEASUREMENT_PERIOD){
     lastMeasurement = currentTime;
 
 #if (DEVICE_TYPE == TYPE_CO2_SENSOR)
