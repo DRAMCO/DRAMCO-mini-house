@@ -15,7 +15,7 @@
  *       Author: Geoffrey Ottoy
  *
  *  Description: Device settings (device type, device id, mqqt server, etc.)
- * 
+ *
  *  License: GNU GPL v3.0 (see LICENSE)
  */
 
@@ -38,8 +38,8 @@
 //#define DEVICE_TYPE TYPE_COLOR_SENSOR
 //#define DEVICE_TYPE TYPE_LUX_SENSOR
 //#define DEVICE_TYPE TYPE_FIRE_PLACE
-//#define DEVICE_TYPE TYPE_CURTAINS
-#define DEVICE_TYPE TYPE_BUTTON
+#define DEVICE_TYPE TYPE_CURTAINS
+//#define DEVICE_TYPE TYPE_BUTTON
 
 #define MEASUREMENT_PERIOD  1000
 
@@ -55,7 +55,7 @@ const char* mqtt_name = "dramco-mqtt-server.local";
 //const char* sensorid = "colorsensor-8421";
 //const char* sensorid = "luxsensor-4f23";
 //const char* sensorid = "fireplace-f17e";
-//const char* sensorid = "curtains-09e4";
-const char* sensorid = "button-9b65";
+const char* sensorid = "curtains-09e4";
+//const char* sensorid = "button-9b65";
 
 #endif

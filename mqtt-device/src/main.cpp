@@ -41,6 +41,9 @@
   #elif (DEVICE_TYPE == TYPE_LUX_SENSOR)
     #include "VEML7700.h"
     #define PERIODIC_UPDATES
+  #elif (DEVICE_TYPE == TYPE_CURTAINS)
+    #include "Solscreen.h"
+    #define IS_SUBSCRIBER
   #elif (DEVICE_TYPE == TYPE_BUTTON)
     #define BUTTON_PIN 16
   #else
@@ -88,6 +91,15 @@ bool set_received = false;
 #endif
 #if (DEVICE_TYPE == TYPE_LUX_SENSOR)
   VEML7700 als;
+#endif
+#if (DEVICE_TYPE == TYPE_CURTAINS)
+  Solscreen curtains;
+
+  bool event = false;
+
+  void cb(void){
+    event = true;
+  }
 #endif
 
 unsigned long lastMeasurement = 0;
@@ -243,6 +255,16 @@ void setup() {
   Serial.println("Done.");
 #endif
 
+#if (DEVICE_TYPE == TYPE_CURTAINS)
+  // Init solscreen
+  Serial.println("Init Solscreen...");
+  curtains.begin(&cb);
+  sprintf_P(topic_status, "curtains/%s/status", sensorid);
+  sprintf_P(topic_set, "curtains/%s/set", sensorid);
+  sprintf_P(topic_set_all, "curtains/all/set");
+  Serial.println("Done.");
+#endif
+
 #if (DEVICE_TYPE == TYPE_BUTTON)
   // Init push button
   Serial.println("Init push button...");
@@ -284,6 +306,19 @@ void loop() {
   if(btn_pressed){
     btn_pressed = false;
     sprintf_P(message_status, "toggled");
+    // publish sensor status
+    client.publish(topic_status, message_status, true);
+  }
+#endif
+
+#if (DEVICE_TYPE == TYPE_CURTAINS)
+  if(event){
+    event = false;
+    switch(curtains.getStatus()){
+      case CURTAIN_UP: sprintf_P(message_status, "up"); break;
+      case CURTAIN_DOWN: sprintf_P(message_status, "down"); break;
+      default: sprintf_P(message_status, "error"); break; // we don't expect anything else
+    }
     // publish sensor status
     client.publish(topic_status, message_status, true);
   }
@@ -341,6 +376,29 @@ void loop() {
       sprintf_P(message_status, "closed");
     }
 #endif
+
+#if (DEVICE_TYPE == TYPE_CURTAINS)
+  bool msg_correct = false;
+  if(strstr(message_set, "up") != NULL){
+    curtains.goUp();
+    msg_correct = true;
+  }
+  if(strstr(message_set, "down") != NULL){
+    curtains.goDown();
+    msg_correct = true;
+  }
+  if(!msg_correct){
+    Serial.println("Wrong message format.");
+  }
+  switch(curtains.getStatus()){
+    case CURTAIN_UP: sprintf_P(message_status, "up"); break;
+    case CURTAIN_DOWN: sprintf_P(message_status, "down"); break;
+    case GOING_UP: sprintf_P(message_status, "going up"); break;
+    case GOING_DOWN: sprintf_P(message_status, "going down"); break;
+    default: sprintf_P(message_status, "error"); break;
+  }
+#endif
+
     // publish sensor status
     client.publish(topic_status, message_status, true);
   }
